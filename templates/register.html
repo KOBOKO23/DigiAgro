@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/register.css') }}">
+
+    <div class="register-container">
+        <h2>Field Officer Registration</h2>
+
+        <!-- Flash Messages Display -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('register') }}" method="POST">
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="first_name">First Name</label>
+                    <input type="text" name="first_name" id="first_name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="sir_name">Sir Name</label>
+                    <input type="text" name="sir_name" id="sir_name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="other_names">Other Names</label>
+                    <input type="text" name="other_names" id="other_names">
+                </div>
+
+                <div class="form-group">
+                    <label for="ps_number">P/S Number</label>
+                    <input type="text" name="ps_number" id="ps_number" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_number">ID Number</label>
+                    <input type="text" name="id_number" id="id_number" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone_number">Phone Number</label>
+                    <input type="tel" name="phone_number" id="phone_number" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="work_station">Work Station</label>
+                    <input type="text" name="work_station" id="work_station" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="field_number">Field Number</label>
+                    <input type="text" name="field_number" id="field_number">
+                </div>
+            </div>
+
+            <div class="password-container">
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" name="password" id="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" name="confirm_password" id="confirm_password" required>
+                    <small id="password-error" class="error-message"></small>
+                </div>
+            </div>
+
+            <div class="btn-container">
+                <button type="submit" class="btn-submit" onclick="return validatePassword()">Register</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function validatePassword() {
+            let password = document.getElementById("password").value;
+            let confirmPassword = document.getElementById("confirm_password").value;
+            let errorMsg = document.getElementById("password-error");
+
+            if (password !== confirmPassword) {
+                errorMsg.textContent = "Passwords do not match!";
+                errorMsg.style.color = "red";
+                return false;
+            }
+            errorMsg.textContent = "";
+            return true;
+        }
+    </script>
+
+{% endblock %}

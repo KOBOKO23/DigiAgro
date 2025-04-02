@@ -1,20 +1,20 @@
-from flask import Flask, render_template, redirect, url_for, request, session
+from flask import Flask, render_template, redirect, url_for, request, session, flash
 import mysql.connector
-from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-# Secret key for session management (required for sessions)
-app.secret_key = 'your_secret_key'  # You should change this to a strong secret key
+# Secret key for session management
+app.secret_key = 'your_secret_key'  # Change this to a strong secret key
 
 # MySQL connection details
 def get_db_connection():
     conn = mysql.connector.connect(
-        host='localhost',         # Host for the database (localhost in your case)
-        port=3306,                # Default MySQL port
-        user='root',              # Your MySQL username
-        password='KphiL2022*',    # Your MySQL password
-        database='digiagro'       # Your MySQL database name
+        host='localhost',
+        port=3306,
+        user='root',
+        password='KphiL2022*',
+        database='digiagro'
     )
     return conn
 
@@ -22,48 +22,76 @@ def get_db_connection():
 @app.route('/')
 def index():
     if 'user_id' not in session:
-        return redirect(url_for('login'))  # Redirect to login if the user is not logged in
-    return redirect(url_for('home'))  # Redirect to home if the user is logged in
+        return redirect(url_for('login'))
+    return redirect(url_for('home'))
 
-# Login route (renders the login template and handles login logic)
+# Register route
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        hashed_password = generate_password_hash(password)  # Hash the password
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
+            conn.commit()
+            flash("Registration successful! Please log in.", "success")  # Flash success message
+        except mysql.connector.Error as err:
+            flash(f"Error: {err}", "danger")  # Flash error message if registration fails
+        finally:
+            cursor.close()
+            conn.close()
+
+        return redirect(url_for('login'))  # Redirect to login page
+    
+    return render_template('register.html')
+
+# Login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         
-        # Connect to the MySQL database and check credentials
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
-        user = cursor.fetchone()  # Get the first result
-        
-        # If user exists and password matches
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
         if user and check_password_hash(user['password'], password):
-            # Create a session for the logged-in user
             session['user_id'] = user['user_id']
             session['username'] = user['username']
-            session['role'] = user['role']
-            return redirect(url_for('home'))  # Redirect to home page after successful login
+            session['role'] = user.get('role', 'user')
+            flash("Login successful!", "success")  # Flash success message
+            return redirect(url_for('home'))
         else:
-            return "Invalid credentials, please try again."
-        
-    return render_template('login.html')  # Render the login template if it's a GET request
+            flash("Invalid credentials, please try again.", "danger")  # Flash error message
+            return redirect(url_for('login'))  # Reload login page with message
 
-# Home route (forms page, only accessible if the user is logged in)
+    return render_template('login.html')
+
+# Home route
 @app.route('/home')
 def home():
     if 'user_id' not in session:
-        return redirect(url_for('login'))  # Redirect to login if the user is not logged in
+        flash("Please log in to access this page.", "warning")
+        return redirect(url_for('login'))
     
-    return render_template('home.html')  # Render the home template if the user is logged in
+    return render_template('home.html')
 
-# Logout route (to clear the session and redirect to login)
+# Logout route
 @app.route('/logout')
 def logout():
-    session.clear()  # Clear session data
-    return redirect(url_for('login'))  # Redirect to login page after logging out
-
+    session.clear()
+    flash("You have been logged out.", "info")  # Flash logout message
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)  # Running the app on port 5000
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
