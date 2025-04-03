@@ -29,7 +29,7 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
         hashed_password = generate_password_hash(password)  # Hash the password
 
@@ -37,7 +37,7 @@ def register():
         cursor = conn.cursor()
 
         try:
-            cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
+            cursor.execute("INSERT INTO users (email, password) VALUES (%s, %s)", (email, hashed_password))
             conn.commit()
             flash("Registration successful! Please log in.", "success")  # Flash success message
         except mysql.connector.Error as err:
@@ -54,19 +54,19 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
         
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
         cursor.close()
         conn.close()
 
         if user and check_password_hash(user['password'], password):
             session['user_id'] = user['user_id']
-            session['username'] = user['username']
+            session['email'] = user['email']
             session['role'] = user.get('role', 'user')
             flash("Login successful!", "success")  # Flash success message
             return redirect(url_for('home'))
